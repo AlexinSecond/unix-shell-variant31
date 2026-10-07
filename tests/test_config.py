@@ -9,6 +9,7 @@ from pathlib import Path
 from src.__main__ import main
 from src.config import Config, parse_config
 from src.shell import Shell
+from src.vfs import VirtualFileSystem
 
 
 class ConfigTests(unittest.TestCase):
@@ -59,7 +60,9 @@ class ConfigTests(unittest.TestCase):
     def test_conf_dump_and_error(self):
         """The service command prints configuration and checks arity."""
         output = io.StringIO()
-        shell = Shell(Config(Path("fs.json")), output.write)
+        shell = Shell(
+            Config(Path("fs.json")), output.write, VirtualFileSystem()
+        )
         shell.execute("conf-dump")
         shell.execute("conf-dump extra")
         self.assertIn("vfs_path=fs.json\nscript_path=", output.getvalue())

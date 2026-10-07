@@ -9,14 +9,14 @@ from .shell import Shell
 def main(arguments: list[str] | None = None) -> int:
     """Print configuration, run the startup script, then open the REPL."""
     config = parse_config(arguments)
-    shell = Shell(config)
-    shell.emit(config.dump())
-    if config.script_path is not None:
-        try:
+    print(config.dump())
+    try:
+        shell = Shell(config)
+        if config.script_path is not None:
             shell.run_script(config.script_path)
-        except (OSError, UnicodeError) as error:
-            print(f"startup: {error}", file=sys.stderr)
-            return 1
+    except (OSError, UnicodeError, ValueError) as error:
+        print(f"startup: {error}", file=sys.stderr)
+        return 1
     if shell.running:
         shell.run()
     return 0

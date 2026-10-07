@@ -7,6 +7,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from .config import Config
+from .vfs import VirtualFileSystem
 
 
 class Shell:
@@ -15,6 +16,7 @@ class Shell:
     def __init__(
         self, config: Config | None = None,
         writer: Callable[[str], object] | None = None,
+        vfs: VirtualFileSystem | None = None,
     ):
         """Read real user/host names and initialize the output writer."""
         self.write = writer if writer is not None else sys.stdout.write
@@ -22,6 +24,10 @@ class Shell:
         self.hostname = socket.gethostname()
         self.running = True
         self.config = config or Config(Path("examples/vfs/minimal.json"))
+        self.vfs = vfs if vfs is not None else VirtualFileSystem.load(
+            self.config.vfs_path
+        )
+        self.cwd = "/"
 
     @property
     def prompt(self) -> str:
@@ -37,6 +43,7 @@ class Shell:
         return {
             "ls": self._ls, "cd": self._cd, "exit": self._exit,
             "conf-dump": self._conf_dump,
+            "vfs-init": self._vfs_init,
         }
 
     def execute(self, line: str) -> None:
@@ -87,6 +94,14 @@ class Shell:
         if arguments:
             raise ValueError("usage: conf-dump")
         self.emit(self.config.dump())
+
+    def _vfs_init(self, arguments: list[str]) -> None:
+        """Reset both VFS representations and the current directory."""
+        if arguments:
+            raise ValueError("usage: vfs-init")
+        self.vfs.reset(self.config.vfs_path)
+        self.cwd = "/"
+        self.emit("VFS reset: empty root directory")
 
     def _cd(self, arguments: list[str]) -> None:
         """Print the name and arguments of the cd stub."""

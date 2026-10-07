@@ -1,0 +1,55 @@
+{
+  "type": "dir",
+  "children": {
+    "hello.txt": {
+      "type": "file",
+      "content": "Hello, variant 31!\nSecond line.\n"
+    },
+    ".hidden": {
+      "type": "file",
+      "content": "Hidden file.\n"
+    },
+    "empty.txt": {
+      "type": "file",
+      "content": ""
+    },
+    "binary.bin": {
+      "type": "file",
+      "encoding": "base64",
+      "content": "AAEC/w=="
+    },
+    "home": {
+      "type": "dir",
+      "children": {
+        "student": {
+          "type": "dir",
+          "children": {
+            "projects": {
+              "type": "dir",
+              "children": {
+                "readme.txt": {
+                  "type": "file",
+                  "content": "Project at /home/student/projects.\n"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "var": {
+      "type": "dir",
+      "children": {
+        "log": {
+          "type": "dir",
+          "children": {
+            "session.log": {
+              "type": "file",
+              "content": "Session started.\n"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "type": "dir",
+  "children": {
+    "hello.txt": {
+      "type": "file",
+      "encoding": "utf-8",
+      "content": "Hello, variant 31!\nSecond line.\n"
+    },
+    "empty.txt": {
+      "type": "file",
+      "content": ""
+    },
+    ".hidden": {
+      "type": "file",
+      "content": "Hidden file.\n"
+    },
+    "binary.bin": {
+      "type": "file",
+      "encoding": "base64",
+      "content": "AAEC/w=="
+    },
+    "docs": {
+      "type": "dir",
+      "children": {
+        "note.txt": {
+          "type": "file",
+          "content": "Notes inside docs.\n"
+        }
+      }
+    }
+  }
+}

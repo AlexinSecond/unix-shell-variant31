@@ -1,0 +1,14 @@
+# Stage 3: configuration, loaded VFS, reset, and earlier commands.
+conf-dump
+conf-dump extra
+ls
+ls -a /
+ls /home/student/projects
+cd /home/student
+cd ..
+unknown
+vfs-init extra
+vfs-init
+ls /
+exit extra
+exit
