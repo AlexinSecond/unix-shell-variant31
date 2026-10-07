@@ -1,0 +1,72 @@
+"""Interactive loop, whitespace parser, and prototype commands."""
+
+import getpass
+import socket
+import sys
+from collections.abc import Callable
+
+
+class Shell:
+    """Parse commands and dispatch them without using the host shell."""
+
+    def __init__(self, writer: Callable[[str], object] | None = None):
+        """Read real user/host names and initialize the output writer."""
+        self.write = writer if writer is not None else sys.stdout.write
+        self.username = getpass.getuser()
+        self.hostname = socket.gethostname()
+        self.running = True
+
+    @property
+    def prompt(self) -> str:
+        """Return a UNIX-like prompt based on real OS information."""
+        return f"{self.username}@{self.hostname}:~$ "
+
+    def emit(self, message: str) -> None:
+        """Write a complete output line."""
+        self.write(message + "\n")
+
+    def commands(self) -> dict[str, Callable[[list[str]], None]]:
+        """Return the commands supported at this implementation stage."""
+        return {"ls": self._ls, "cd": self._cd, "exit": self._exit}
+
+    def execute(self, line: str) -> None:
+        """Split on whitespace, dispatch, and report command errors."""
+        tokens = line.split()
+        if not tokens:
+            return
+        command, *arguments = tokens
+        handler = self.commands().get(command)
+        if handler is None:
+            self.emit(f"{command}: command not found")
+            return
+        try:
+            handler(arguments)
+        except (ValueError, OSError) as error:
+            self.emit(f"{command}: {error}")
+
+    def run(self) -> None:
+        """Read commands until exit or EOF; Ctrl+C cancels the input."""
+        while self.running:
+            try:
+                line = input(self.prompt)
+            except EOFError:
+                self.emit("")
+                break
+            except KeyboardInterrupt:
+                self.emit("")
+                continue
+            self.execute(line)
+
+    def _ls(self, arguments: list[str]) -> None:
+        """Print the name and arguments of the ls stub."""
+        self.emit(f"ls: {arguments!r}")
+
+    def _cd(self, arguments: list[str]) -> None:
+        """Print the name and arguments of the cd stub."""
+        self.emit(f"cd: {arguments!r}")
+
+    def _exit(self, arguments: list[str]) -> None:
+        """Stop the loop; reject arguments in this emulator."""
+        if arguments:
+            raise ValueError("usage: exit")
+        self.running = False
