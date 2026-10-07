@@ -4,10 +4,10 @@ import io
 import unittest
 from pathlib import Path
 
-from src.commands import CatWriter, parse_options
+from src.commands import parse_options
 from src.config import Config
 from src.shell import Shell
-from src.vfs import Node, VirtualFileSystem
+from src.vfs import Node
 
 
 class CommandTests(unittest.TestCase):

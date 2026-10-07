@@ -1,0 +1,8 @@
+# Short demonstration; the physical JSON file stays unchanged.
+ls /
+cd /home/student/projects
+cat readme.txt
+touch note.txt
+ls
+history
+exit

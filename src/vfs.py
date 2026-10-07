@@ -3,8 +3,18 @@
 import base64
 import binascii
 import json
+import posixpath
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
+
+
+class MissingPathError(ValueError):
+    """Indicate a virtual path component that does not exist."""
+
+
+class NotDirectoryError(ValueError):
+    """Indicate a file used where a virtual directory is required."""
 
 
 @dataclass
@@ -96,7 +106,7 @@ class VirtualFileSystem:
             if not part:
                 continue
             if stack[-1].kind != "dir":
-                raise ValueError(f"{path}: Not a directory")
+                raise NotDirectoryError(f"{path}: Not a directory")
             if part == ".":
                 continue
             if part == "..":
@@ -105,11 +115,11 @@ class VirtualFileSystem:
                     stack.pop()
                 continue
             if part not in stack[-1].children:
-                raise ValueError(f"{path}: No such file or directory")
+                raise MissingPathError(f"{path}: No such file or directory")
             names.append(part)
             stack.append(stack[-1].children[part])
         if path.endswith("/") and stack[-1].kind != "dir":
-            raise ValueError(f"{path}: Not a directory")
+            raise NotDirectoryError(f"{path}: Not a directory")
         return "/" + "/".join(names), stack[-1]
 
     def reset(self, path: Path) -> None:
@@ -119,3 +129,21 @@ class VirtualFileSystem:
             json.dumps(data, indent=2) + "\n", encoding="utf-8"
         )
         self.root = Node("dir")
+
+    def touch(self, path: str, cwd: str = "/", create: bool = True) -> None:
+        """Create an empty file or update timestamps only in memory."""
+        try:
+            _, node = self.resolve(path, cwd)
+        except MissingPathError:
+            if not create:
+                return
+            if path.endswith("/"):
+                raise NotDirectoryError(f"{path}: Not a directory") from None
+            parent_path, name = posixpath.split(path)
+            validate_name(name)
+            _, parent = self.resolve(parent_path or ".", cwd)
+            if parent.kind != "dir":
+                raise NotDirectoryError(f"{path}: Not a directory") from None
+            node = Node("file")
+            parent.children[name] = node
+        node.mtime_ns = time.time_ns()

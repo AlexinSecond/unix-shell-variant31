@@ -52,6 +52,7 @@ class Shell:
             "conf-dump": self._conf_dump,
             "vfs-init": self._vfs_init,
             "cat": self._cat, "history": self._history,
+            "touch": self._touch,
         }
 
     def execute(self, line: str) -> None:
@@ -182,6 +183,17 @@ class Shell:
         start = max(len(self.history) - count, MIN_HISTORY_COUNT)
         for index in range(start, len(self.history)):
             self.emit(f"{index + 1:5}  {self.history[index]}")
+
+    def _touch(self, arguments: list[str]) -> None:
+        """Create files or refresh timestamps; -c suppresses creation."""
+        flags, paths = parse_options(arguments, {"c"})
+        if not paths:
+            raise ValueError("usage: touch [-c] [--] FILE...")
+        for path in paths:
+            try:
+                self.vfs.touch(path, self.cwd, create="c" not in flags)
+            except ValueError as error:
+                self.emit(f"touch: {error}")
 
     def _exit(self, arguments: list[str]) -> None:
         """Stop the loop; reject arguments in this emulator."""

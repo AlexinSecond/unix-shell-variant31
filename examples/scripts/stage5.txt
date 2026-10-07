@@ -1,0 +1,67 @@
+# Stage 5: all commands and supported modes, including expected errors.
+conf-dump
+conf-dump extra
+ls
+ls -a
+ls /hello.txt /home/student/projects
+ls -- /hello.txt
+ls -z
+ls /missing
+ls /hello.txt/child
+cd /home/student/projects
+cat readme.txt
+touch new.txt
+touch new.txt
+cat new.txt
+ls
+touch first.txt second.txt
+touch /absolute.txt
+touch ../parent.txt
+touch -c absent.txt
+ls -a
+touch -c readme.txt
+touch .
+touch -- -dash.txt
+cat -- -dash.txt
+touch /missing/child.txt
+touch /hello.txt/child.txt
+touch not-a-directory/
+touch /missing/bad.txt good.txt
+touch
+touch -z bad.txt
+cd ..
+cd -
+cd ~
+cd
+cd -- /var/log
+cd /
+cd /missing
+cd /hello.txt
+cd one two
+cat /hello.txt
+cat -n /hello.txt /home/student/projects/readme.txt
+cat /empty.txt
+cat /binary.bin
+cat -- /hello.txt
+cat /missing /hello.txt
+cat /
+cat
+cat -z /hello.txt
+history
+history 5
+history 0
+history -1
+history abc
+history 1 2
+history -c
+history
+unknown
+vfs-init extra
+vfs-init
+ls -a /
+cd /home
+touch /after-reset.txt
+cat /after-reset.txt
+ls /
+exit extra
+exit
