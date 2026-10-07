@@ -1,0 +1,11 @@
+# Stage 2: CLI parameters and Python-style comments.
+
+conf-dump
+conf-dump extra
+ls -a /home # inline comment
+cd /tmp
+unknown
+exit extra
+exit
+# Commands after exit must not execute.
+ls ignored

@@ -4,17 +4,24 @@ import getpass
 import socket
 import sys
 from collections.abc import Callable
+from pathlib import Path
+
+from .config import Config
 
 
 class Shell:
     """Parse commands and dispatch them without using the host shell."""
 
-    def __init__(self, writer: Callable[[str], object] | None = None):
+    def __init__(
+        self, config: Config | None = None,
+        writer: Callable[[str], object] | None = None,
+    ):
         """Read real user/host names and initialize the output writer."""
         self.write = writer if writer is not None else sys.stdout.write
         self.username = getpass.getuser()
         self.hostname = socket.gethostname()
         self.running = True
+        self.config = config or Config(Path("examples/vfs/minimal.json"))
 
     @property
     def prompt(self) -> str:
@@ -27,7 +34,10 @@ class Shell:
 
     def commands(self) -> dict[str, Callable[[list[str]], None]]:
         """Return the commands supported at this implementation stage."""
-        return {"ls": self._ls, "cd": self._cd, "exit": self._exit}
+        return {
+            "ls": self._ls, "cd": self._cd, "exit": self._exit,
+            "conf-dump": self._conf_dump,
+        }
 
     def execute(self, line: str) -> None:
         """Split on whitespace, dispatch, and report command errors."""
@@ -60,6 +70,23 @@ class Shell:
     def _ls(self, arguments: list[str]) -> None:
         """Print the name and arguments of the ls stub."""
         self.emit(f"ls: {arguments!r}")
+
+    def run_script(self, path: Path) -> None:
+        """Echo and execute script commands; support Python # comments."""
+        for raw_line in path.read_text(encoding="utf-8-sig").splitlines():
+            command = raw_line.partition("#")[0].strip()
+            if not command:
+                continue
+            self.emit(self.prompt + raw_line.strip())
+            self.execute(command)
+            if not self.running:
+                break
+
+    def _conf_dump(self, arguments: list[str]) -> None:
+        """Print the current configuration as key-value pairs."""
+        if arguments:
+            raise ValueError("usage: conf-dump")
+        self.emit(self.config.dump())
 
     def _cd(self, arguments: list[str]) -> None:
         """Print the name and arguments of the cd stub."""
