@@ -33,6 +33,23 @@ def decode_file(data: dict) -> bytes:
     raise ValueError(f"unsupported file encoding: {encoding}")
 
 
+def validate_name(name: str) -> None:
+    """Reject names that would corrupt the portable virtual path tree."""
+    if not name or name in {".", ".."} or "/" in name or "\\" in name:
+        raise ValueError(f"invalid VFS name: {name!r}")
+    if "\x00" in name:
+        raise ValueError("VFS names cannot contain NUL")
+
+
+def expand_path(path: str, cwd: str) -> str:
+    """Expand the virtual home and make a path absolute without collapsing."""
+    if path == "~":
+        path = "/"
+    elif path.startswith("~/"):
+        path = "/" + path[2:]
+    return path if path.startswith("/") else cwd + "/" + path
+
+
 def decode_node(data: object) -> Node:
     """Validate and recursively build a tree from the JSON schema."""
     if not isinstance(data, dict):
@@ -47,10 +64,7 @@ def decode_node(data: object) -> Node:
         raise ValueError("directory children must be an object")
     node = Node("dir")
     for name, child in children.items():
-        if not name or name in {".", ".."} or "/" in name or "\\" in name:
-            raise ValueError(f"invalid VFS name: {name!r}")
-        if "\x00" in name:
-            raise ValueError("VFS names cannot contain NUL")
+        validate_name(name)
         node.children[name] = decode_node(child)
     return node
 
@@ -75,10 +89,7 @@ class VirtualFileSystem:
 
     def resolve(self, path: str, cwd: str = "/") -> tuple[str, Node]:
         """Resolve ~, ., .. and check every traversed directory."""
-        expanded = "/" + path[2:] if path.startswith("~/") else path
-        if expanded == "~":
-            expanded = "/"
-        full = expanded if expanded.startswith("/") else cwd + "/" + expanded
+        full = expand_path(path, cwd)
         names: list[str] = []
         stack = [self.root]
         for part in full.split("/"):

@@ -1,4 +1,4 @@
-"""Check the stage 1 prototype and its error handling."""
+"""Check the REPL, whitespace parser, prompt, and error handling."""
 
 import io
 import unittest
@@ -22,15 +22,15 @@ class ShellTests(unittest.TestCase):
                 shell = Shell(writer=self.output.write)
         self.assertEqual(shell.prompt, "student@pc:~$ ")
 
-    def test_whitespace_parser_and_stub_arguments(self):
+    def test_whitespace_parser_and_arguments(self):
         """Repeated spaces separate arguments and empty input is ignored."""
-        self.shell.execute("   ls   -a /home  ")
-        self.shell.execute("cd /tmp")
-        self.shell.execute("  ")
-        self.assertEqual(
-            self.output.getvalue(),
-            "ls: ['-a', '/home']\ncd: ['/tmp']\n",
-        )
+        received = []
+        handlers = {"ls": received.append, "cd": received.append}
+        with patch.object(self.shell, "commands", return_value=handlers):
+            self.shell.execute("   ls   -a /home  ")
+            self.shell.execute("cd /tmp")
+            self.shell.execute("  ")
+        self.assertEqual(received, [["-a", "/home"], ["/tmp"]])
 
     def test_unknown_command(self):
         """An unknown command produces an error without stopping."""
@@ -50,7 +50,7 @@ class ShellTests(unittest.TestCase):
         """The real loop consumes commands and stops on exit."""
         with patch("builtins.input", side_effect=["ls", "bad", "exit"]):
             self.shell.run()
-        self.assertIn("ls: []", self.output.getvalue())
+        self.assertFalse(self.shell.running)
         self.assertIn("bad: command not found", self.output.getvalue())
 
     def test_repl_handles_interrupt_and_eof(self):

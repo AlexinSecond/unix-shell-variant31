@@ -1,0 +1,48 @@
+# Stage 4: all supported modes and errors for ls, cd, cat, history.
+conf-dump
+ls
+ls -a
+ls /
+ls /hello.txt /home/student/projects
+ls -- /hello.txt
+ls -z
+ls /missing
+ls /hello.txt/child
+cd /home/student
+ls projects
+cd ./projects
+cat readme.txt
+cd ..
+cd -
+cd ~
+cd
+cd -- /var/log
+cd /
+cd /missing
+cd /hello.txt
+cd one two
+cat /hello.txt
+cat -n /hello.txt /home/student/projects/readme.txt
+cat /empty.txt
+cat /binary.bin
+cat -- /hello.txt
+cat /missing /hello.txt
+cat /
+cat
+cat -z /hello.txt
+history
+history 3
+history 0
+history -1
+history abc
+history 1 2
+history -c
+history
+unknown
+conf-dump extra
+vfs-init extra
+vfs-init
+ls -a /
+cd /home
+exit extra
+exit

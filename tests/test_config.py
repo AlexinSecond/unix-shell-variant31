@@ -53,7 +53,7 @@ class ConfigTests(unittest.TestCase):
             shell.run_script(path)
         result = output.getvalue()
         self.assertIn("$ ls one # comment", result)
-        self.assertIn("ls: ['one']", result)
+        self.assertIn("ls: one: No such file or directory", result)
         self.assertNotIn("ignored", result)
         self.assertNotIn("# skip", result)
 
