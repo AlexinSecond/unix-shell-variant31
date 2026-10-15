@@ -10,13 +10,14 @@ from src.shell import Shell
 class ShellTests(unittest.TestCase):
     """Exercise the public command-dispatch interface."""
 
-    def setUp(self):
+    def prepare_test(self):
         """Capture output independently of the real terminal."""
         self.output = io.StringIO()
         self.shell = Shell(writer=self.output.write)
 
     def test_prompt_uses_real_os_data(self):
         """The prompt uses getpass and socket rather than fixed names."""
+        self.prepare_test()
         with patch("src.shell.getpass.getuser", return_value="student"):
             with patch("src.shell.socket.gethostname", return_value="pc"):
                 shell = Shell(writer=self.output.write)
@@ -24,6 +25,7 @@ class ShellTests(unittest.TestCase):
 
     def test_whitespace_parser_and_arguments(self):
         """Repeated spaces separate arguments and empty input is ignored."""
+        self.prepare_test()
         received = []
         handlers = {"ls": received.append, "cd": received.append}
         with patch.object(self.shell, "commands", return_value=handlers):
@@ -34,12 +36,14 @@ class ShellTests(unittest.TestCase):
 
     def test_unknown_command(self):
         """An unknown command produces an error without stopping."""
+        self.prepare_test()
         self.shell.execute("unknown")
         self.assertIn("command not found", self.output.getvalue())
         self.assertTrue(self.shell.running)
 
     def test_exit_rejects_arguments(self):
         """A malformed exit leaves the loop active."""
+        self.prepare_test()
         self.shell.execute("exit now")
         self.assertTrue(self.shell.running)
         self.assertIn("usage: exit", self.output.getvalue())
@@ -48,6 +52,7 @@ class ShellTests(unittest.TestCase):
 
     def test_repl_runs_until_exit(self):
         """The real loop consumes commands and stops on exit."""
+        self.prepare_test()
         with patch("builtins.input", side_effect=["ls", "bad", "exit"]):
             self.shell.run()
         self.assertFalse(self.shell.running)
@@ -55,6 +60,7 @@ class ShellTests(unittest.TestCase):
 
     def test_repl_handles_interrupt_and_eof(self):
         """Ctrl+C does not terminate the process; EOF ends the loop."""
+        self.prepare_test()
         with patch("builtins.input", side_effect=[KeyboardInterrupt, EOFError]):
             self.shell.run()
         self.assertEqual(self.output.getvalue(), "\n\n")

@@ -15,12 +15,13 @@ from src.vfs import VirtualFileSystem, decode_node
 class VfsTests(unittest.TestCase):
     """Exercise real fixture files and isolated writable JSON copies."""
 
-    def setUp(self):
+    def prepare_test(self):
         """Load the filesystem with at least three directory levels."""
         self.vfs = VirtualFileSystem.load(Path("examples/vfs/deep.json"))
 
     def test_fixture_variants_and_binary_data(self):
         """Minimal, multi-file, and deep trees all load correctly."""
+        self.prepare_test()
         minimal = VirtualFileSystem.load(Path("examples/vfs/minimal.json"))
         files = VirtualFileSystem.load(Path("examples/vfs/files.json"))
         self.assertEqual(minimal.root.children, {})
@@ -32,6 +33,7 @@ class VfsTests(unittest.TestCase):
 
     def test_paths_relative_absolute_parent_and_home(self):
         """The path resolver works independently of Windows path rules."""
+        self.prepare_test()
         self.assertEqual(
             self.vfs.resolve("./projects/../projects", "/home/student")[0],
             "/home/student/projects",
@@ -42,6 +44,7 @@ class VfsTests(unittest.TestCase):
 
     def test_missing_or_non_directory_components(self):
         """Normalization must not bypass missing nodes or file parents."""
+        self.prepare_test()
         for path in ["/missing/../home", "/hello.txt/..", "/hello.txt/"]:
             with self.subTest(path=path):
                 with self.assertRaises(ValueError):
@@ -49,6 +52,7 @@ class VfsTests(unittest.TestCase):
 
     def test_invalid_schema(self):
         """Bad node types, content, names, encoding, and base64 fail."""
+        self.prepare_test()
         invalid = [
             [], {"type": "bad"}, {"type": "dir", "children": []},
             {"type": "file", "content": 12},
@@ -65,6 +69,7 @@ class VfsTests(unittest.TestCase):
 
     def test_load_does_not_modify_physical_source(self):
         """Loading performs no writes to the physical source."""
+        self.prepare_test()
         path = Path("examples/vfs/deep.json")
         before = path.read_bytes()
         VirtualFileSystem.load(path)
@@ -72,6 +77,7 @@ class VfsTests(unittest.TestCase):
 
     def test_reset_clears_memory_physical_source_and_cwd(self):
         """Only the service command resets the JSON file on disk."""
+        self.prepare_test()
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "vfs.json"
             path.write_bytes(Path("examples/vfs/deep.json").read_bytes())
@@ -87,6 +93,7 @@ class VfsTests(unittest.TestCase):
 
     def test_failed_reset_keeps_memory(self):
         """A physical write failure leaves the in-memory tree unchanged."""
+        self.prepare_test()
         original = self.vfs.root
         with patch.object(Path, "write_text", side_effect=OSError("denied")):
             with self.assertRaises(OSError):
@@ -95,6 +102,7 @@ class VfsTests(unittest.TestCase):
 
     def test_bad_json_and_missing_file(self):
         """Invalid physical sources produce readable startup failures."""
+        self.prepare_test()
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "vfs.json"
             with self.assertRaises(OSError):

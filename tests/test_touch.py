@@ -14,7 +14,7 @@ from src.vfs import VirtualFileSystem
 class TouchTests(unittest.TestCase):
     """Operate on a temporary JSON copy to verify disk invariants."""
 
-    def setUp(self):
+    def prepare_test(self):
         """Prepare the source, shell, and captured command output."""
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
@@ -26,6 +26,7 @@ class TouchTests(unittest.TestCase):
 
     def test_create_relative_absolute_and_multiple_files(self):
         """touch creates empty files in existing virtual directories."""
+        self.prepare_test()
         self.shell.execute("cd /home/student/projects")
         self.shell.execute("touch one.txt two.txt /absolute.txt ../parent.txt")
         paths = [
@@ -43,6 +44,7 @@ class TouchTests(unittest.TestCase):
 
     def test_existing_file_preserves_contents_and_updates_time(self):
         """touch does not truncate an existing file."""
+        self.prepare_test()
         node = self.shell.vfs.resolve("/hello.txt")[1]
         original = node.content
         with patch("src.vfs.time.time_ns", return_value=123456789):
@@ -52,6 +54,7 @@ class TouchTests(unittest.TestCase):
 
     def test_directory_timestamp_can_be_updated(self):
         """Existing directories accept touch without changing their type."""
+        self.prepare_test()
         node = self.shell.vfs.resolve("/home")[1]
         with patch("src.vfs.time.time_ns", return_value=123):
             self.shell.execute("touch /home")
@@ -60,6 +63,7 @@ class TouchTests(unittest.TestCase):
 
     def test_no_create_option(self):
         """-c skips missing files but still updates existing timestamps."""
+        self.prepare_test()
         self.shell.execute("touch -c /absent.txt /hello.txt")
         self.assertNotIn("absent.txt", self.shell.vfs.root.children)
         self.assertGreater(self.shell.vfs.resolve("/hello.txt")[1].mtime_ns, 0)
@@ -67,6 +71,7 @@ class TouchTests(unittest.TestCase):
 
     def test_errors_and_later_valid_operand(self):
         """Invalid parents and options are reported without stopping."""
+        self.prepare_test()
         commands = [
             "touch /missing/file.txt good.txt",
             "touch /hello.txt/file.txt", "touch absent/",
@@ -84,11 +89,13 @@ class TouchTests(unittest.TestCase):
 
     def test_option_terminator(self):
         """touch -- supports virtual names starting with a dash."""
+        self.prepare_test()
         self.shell.execute("touch -- -dash.txt")
         self.assertIn("-dash.txt", self.shell.vfs.root.children)
 
     def test_changes_disappear_when_reloading(self):
         """The JSON bytes and host directory contents stay unchanged."""
+        self.prepare_test()
         files_before = list(Path(self.directory.name).iterdir())
         self.shell.execute("touch /new.txt /hello.txt")
         self.assertEqual(self.path.read_bytes(), self.before)
@@ -101,6 +108,7 @@ class TouchTests(unittest.TestCase):
 
     def test_reset_removes_created_files_and_resets_previous_cwd(self):
         """Service reset clears memory/disk while history remains available."""
+        self.prepare_test()
         self.shell.execute("touch /created.txt")
         self.shell.execute("cd /home")
         self.shell.execute("vfs-init")

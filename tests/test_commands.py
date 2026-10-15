@@ -13,7 +13,7 @@ from src.vfs import Node
 class CommandTests(unittest.TestCase):
     """Test command output and state rather than handler internals."""
 
-    def setUp(self):
+    def prepare_test(self):
         """Load a fresh in-memory copy for each test."""
         self.output = io.StringIO()
         self.source = Path("examples/vfs/deep.json")
@@ -28,6 +28,7 @@ class CommandTests(unittest.TestCase):
 
     def test_ls_hidden_files_and_file_operand(self):
         """ls hides dotfiles unless -a is present and supports file paths."""
+        self.prepare_test()
         plain = self.execute("ls")
         self.assertNotIn(".hidden", plain)
         self.assertEqual(plain.splitlines(), sorted(plain.splitlines()))
@@ -37,6 +38,7 @@ class CommandTests(unittest.TestCase):
 
     def test_ls_multiple_paths_and_errors(self):
         """An invalid operand does not prevent listing later valid ones."""
+        self.prepare_test()
         result = self.execute("ls /missing /home/student/projects")
         self.assertIn("No such file", result)
         self.assertIn("readme.txt", result)
@@ -44,6 +46,7 @@ class CommandTests(unittest.TestCase):
 
     def test_cd_relative_parent_home_and_previous(self):
         """cd changes only the virtual cwd and updates the prompt."""
+        self.prepare_test()
         self.execute("cd /home/student")
         self.execute("cd ./projects")
         self.assertEqual(self.shell.cwd, "/home/student/projects")
@@ -58,6 +61,7 @@ class CommandTests(unittest.TestCase):
 
     def test_cd_errors_preserve_directory(self):
         """Missing paths, files, and too many operands do not change cwd."""
+        self.prepare_test()
         for command in ["cd /missing", "cd /hello.txt", "cd a b"]:
             with self.subTest(command=command):
                 self.assertTrue(self.execute(command))
@@ -65,6 +69,7 @@ class CommandTests(unittest.TestCase):
 
     def test_cat_contents_numbering_and_empty_file(self):
         """cat preserves text and numbers lines across all operands."""
+        self.prepare_test()
         self.assertEqual(self.execute("cat /hello.txt"),
                          "Hello, variant 31!\nSecond line.\n")
         self.assertEqual(self.execute("cat /empty.txt"), "")
@@ -77,6 +82,7 @@ class CommandTests(unittest.TestCase):
 
     def test_cat_errors_and_later_valid_operand(self):
         """cat reports errors, then continues with valid files."""
+        self.prepare_test()
         result = self.execute("cat /missing /hello.txt")
         self.assertIn("No such file", result)
         self.assertIn("Hello, variant 31!", result)
@@ -86,6 +92,7 @@ class CommandTests(unittest.TestCase):
 
     def test_cat_unterminated_lines_continue_between_files(self):
         """cat -n does not number a new line without a newline boundary."""
+        self.prepare_test()
         self.shell.vfs.root.children["one"] = Node("file", content=b"abc")
         self.shell.vfs.root.children["two"] = Node("file", content=b"def\nx")
         self.assertEqual(
@@ -94,6 +101,7 @@ class CommandTests(unittest.TestCase):
 
     def test_history_records_errors_itself_and_preserves_spacing(self):
         """Nonempty commands, including unsuccessful ones, are numbered."""
+        self.prepare_test()
         self.execute("  ls   /  ")
         self.execute("bad")
         self.execute(" ")
@@ -103,6 +111,7 @@ class CommandTests(unittest.TestCase):
 
     def test_history_zero_clear_and_bad_arguments(self):
         """Zero prints nothing; clear resets numbering; errors stay visible."""
+        self.prepare_test()
         self.execute("ls")
         self.assertEqual(self.execute("history 0"), "")
         self.assertIn("negative", self.execute("history -1"))
@@ -113,6 +122,7 @@ class CommandTests(unittest.TestCase):
 
     def test_read_commands_do_not_modify_source_or_host_cwd(self):
         """ls, cd, cat and history do not write JSON or change host cwd."""
+        self.prepare_test()
         before = self.source.read_bytes()
         host_cwd = Path.cwd()
         for command in ["cd /home", "ls -a /", "cat /hello.txt", "history"]:
@@ -122,6 +132,7 @@ class CommandTests(unittest.TestCase):
 
     def test_option_terminator_allows_names_starting_with_dash(self):
         """-- separates options from names that would look like flags."""
+        self.prepare_test()
         self.shell.vfs.root.children["-a"] = Node("file", content=b"ok")
         self.assertEqual(self.execute("cat -- -a"), "ok")
         self.assertEqual(parse_options(["-a", "--", "-x"], {"a"}),
